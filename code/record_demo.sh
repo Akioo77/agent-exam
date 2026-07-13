@@ -130,20 +130,20 @@ python3 main.py --list
 pause
 
 # ============================================================
-# 6. Git 历史
+# 6. 启动 CLI 主界面（交互模式，停留在这里）
 # ============================================================
-section "6/6 Git 提交历史"
-cd ..
-echo -e "${BLUE}git log:${NC}"
-git log --oneline
+section "6/6 启动 Agent CLI 主界面"
+echo -e "${BLUE}现在启动 main.py，进入交互模式${NC}"
+echo -e "${YELLOW}（录屏会在此处停留，让面试官看到主程序界面）${NC}"
 echo ""
-echo -e "${BLUE}仓库统计：${NC}"
-echo "  文件数: $(git ls-files | wc -l | tr -d ' ')"
-echo "  代码行: $(git ls-files | grep -E '\.(py|sh)$' | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')"
+echo -e "${GREEN}提示：面试官可以在这里看到:${NC}"
+echo "  • Banner（项目标题 + Model + Session ID）"
+echo "  • 内置命令列表（/new, /list, /switch 等）"
+echo "  • 提示符等待用户输入"
 echo ""
-echo -e "${GREEN}✓ 演示结束${NC}"
-echo ""
-echo -e "${YELLOW}下一步：${NC}"
-echo "  1. 推到 GitHub: cd .. && git remote add origin <URL> && git push -u origin master"
-echo "  2. 把录制文件整理到 RECORDING/ 目录"
-echo "  3. 把 repo URL 和录屏链接提交给面试官"
+echo -e "${CYAN}按 Enter 启动 CLI...${NC}"
+read -r
+clear
+
+# 启动 main.py（interactive 模式）
+python3 main.py
