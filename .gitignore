@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Git / temp
+*.tmp
+*.bak
+
+# Local session test data (we DO want to keep RECORDING/ in git)
+# Recording files can be large; consider LFS or exclude for first push:
+# RECORDING/*.mov

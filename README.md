@@ -1,22 +1,92 @@
 # Agent 技术笔试题 — 项目文档
 
-> 状态：**准备阶段**（2026-07-10）
-> 目标：从零实现最小可用 Agent + 5 道架构设计题
+> **应聘人：庄英琪**
+> 状态：**✅ 已完成**（2026-07-14）
+> 题目：从零实现最小可用 Agent（Vibe Coding）+ 5 道架构设计题
+>
+> 📺 **录屏**：[`RECORDING/vibecoding_demo.mov`](RECORDING/vibecoding_demo.mov)（103 MB）
+> 📝 **架构题答案**：[`docs/architecture/ARCHITECTURE_ANSWERS.md`](docs/architecture/ARCHITECTURE_ANSWERS.md)
+> 💻 **代码主目录**：[`code/`](code/)
+> 🧪 **测试结果**：92 个测试全部通过
 
 ---
 
-## 🎯 项目目标
+## 🎯 完成内容总览
 
-### Vibe Coding 部分
-- **从零实现 Agent Runtime**（不依赖 langgraph / openhands / openclaw）
-- 核心要素：ReAct 循环、工具注册、Session 隔离、Context 管理、Trace
-- 3 个工具：calculator / search (mock) / todo（自选）
-- 真实 LLM API（minimax M3）
-- 录屏 + 测试用例 + README
+### Part 1 · Vibe Coding（从零实现 Agent）
 
-### 架构设计部分
-- 5 道题各 300-500 字
-- **主人主答，我打磨**（题目说"用 AI 帮助思考，不是让 AI 完成任务"）
+| 要素 | 实现 |
+|------|------|
+| ReAct Loop 状态机 | `code/agent/runtime.py`（7 个状态）|
+| 工具注册机制 | `code/agent/tools.py`（@register_tool 装饰器 + 自动 Schema 推导）|
+| 3 个工具 | calculator（安全 AST）/ search（mock）/ todo（session 隔离）|
+| LLM 输出解析 | `code/agent/parser.py`（支持 7 种输出格式）|
+| Session 隔离 | `code/agent/session.py`（文件持久化）|
+| Context 压缩 | `code/agent/context.py`（三层记忆）|
+| Trace 日志 | `code/agent/trace.py`（结构化事件）|
+| CLI 入口 | `code/main.py`（支持 `--list` / `--resume`）|
+| **M3 工具调用加固** | 自答检测 + retry + intent-aware prompt augmentation |
+
+### Part 2 · 架构设计题（5 选 5，全部作答）
+
+| 模块 | 题目 | 答案 |
+|------|------|------|
+| 一 | Context 压缩 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块一` |
+| 二 | Memory 经典框架 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块二` |
+| 三 | 长程任务目标保持 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块三` |
+| 四 | 异步工具与通知 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块四` |
+| 五 | Claude Code vs GLM 工具输出 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块五` |
+
+---
+
+## 📂 项目结构
+
+```
+agent-exam/
+├── README.md                            # 本文档
+├── RECORDING/
+│   └── vibecoding_demo.mov              # 录屏文件（103 MB）
+├── docs/
+│   ├── 00-课程总览.md ~ 06-架构对比.md  # 学习笔记
+│   └── architecture/
+│       ├── ARCHITECTURE_ANSWERS.md      # 架构题答案（md）
+│       └── 面试题答案.docx              # 架构题答案（原 docx）
+└── code/                                # Vibe coding 产物
+    ├── main.py                          # CLI 入口
+    ├── config.py                        # 配置
+    ├── requirements.txt
+    ├── README.md                        # 代码详细说明
+    ├── PROMPTS_AND_NOTES.md             # AI Prompt 与问题解决记录
+    ├── record_demo.sh                   # 录屏演示脚本
+    ├── run.sh
+    ├── .env.example
+    ├── .gitignore
+    ├── scripts/check_secrets.py         # 密钥扫描器
+    ├── agent/
+    │   ├── runtime.py                   # ReAct Loop 状态机 ⭐
+    │   ├── llm.py                       # LLM 客户端
+    │   ├── parser.py                    # 输出解析（含 7 种 fallback）
+    │   ├── tools.py                     # 工具基类 + Registry
+    │   ├── session.py                   # Session 管理
+    │   ├── context.py                   # Context 压缩
+    │   └── trace.py                     # Trace 日志
+    ├── tools/
+    │   ├── calculator.py                # 安全数学计算
+    │   ├── search.py                    # Mock 搜索
+    │   └── todo.py                      # 待办列表
+    └── tests/
+        ├── test_calculator.py           # 5
+        ├── test_search.py               # 3
+        ├── test_todo.py                 # 6
+        ├── test_registry.py             # 5
+        ├── test_session_context.py      # 6
+        ├── test_parser.py               # 13
+        ├── test_runtime.py              # 6
+        ├── test_robustness.py           # 19
+        ├── test_cli_commands.py         # 12
+        ├── test_check_secrets.py        # 8
+        └── __init__.py
+```
 
 ---
 
@@ -24,97 +94,85 @@
 
 | 维度 | 选型 | 理由 |
 |------|------|------|
-| **LLM** | minimax M3（OpenAI 兼容） | 已订阅、零成本、minimax |
-| **语言** | Python 3.11+ | 库齐、协程简洁、主人最熟 |
-| **LLM SDK** | `openai` Python | 兼容 minimax API |
-| **测试** | `pytest` + `pytest-asyncio` | 业界标准 |
-| **结构化** | `pydantic` | Schema、验证、序列化 |
-| **Token 计数** | `tiktoken` | 上下文压缩 |
-| **持久化** | JSON 文件 | 简化（不用数据库） |
-| **录屏** | `asciinema` | 体积小、可读性高 |
-| **依赖管理** | `uv` 或 `pip + venv` | 待定 |
+| **LLM** | MiniMax-M3（Anthropic 兼容 API）| 已订阅、零成本、1M 上下文 |
+| **语言** | Python 3.9+ | 兼容性好、库齐 |
+| **LLM SDK** | `anthropic` Python | MiniMax 提供 Anthropic 兼容端点 |
+| **前端** | CLI（`main.py`）| 简单，聚焦核心逻辑 |
+| **测试** | `pytest` | 92 个测试 |
+| **持久化** | JSON 文件（`~/.agent_sessions/`）| 简化 |
+| **录屏** | QuickTime Player（macOS） | 系统自带 |
 
 ---
 
-## 📁 项目结构
+## 📊 核心指标
 
-```
-agent-exam/
-├── README.md                 # 本文档
-├── docs/                     # 课程材料
-│   ├── 00-课程总览.md
-│   ├── 01-Agent-Runtime基础.md
-│   ├── 02-Context-Engineering.md
-│   ├── 03-Memory框架.md
-│   ├── 04-Task-Management.md
-│   ├── 05-Tool-Runtime.md
-│   └── 06-架构对比.md
-├── code/                     # Vibe coding 产物
-│   ├── agent/
-│   │   ├── __init__.py
-│   │   ├── runtime.py        # ReAct 循环核心
-│   │   ├── session.py        # Session 管理
-│   │   ├── context.py        # Context 管理 + 压缩
-│   │   ├── tools/            # 工具实现
-│   │   │   ├── base.py       # 工具基类
-│   │   │   ├── calculator.py
-│   │   │   ├── search.py
-│   │   │   └── todo.py
-│   │   ├── llm.py            # LLM 客户端
-│   │   ├── parser.py         # 输出解析
-│   │   └── trace.py          # Trace / 日志
-│   ├── main.py               # 入口（CLI）
-│   ├── prompts/              # Prompt 模板
-│   └── tests/                # 测试
-│       ├── test_tools.py
-│       ├── test_session.py
-│       ├── test_context.py
-│       └── test_loop.py
-├── notes/                    # 主人思考记录
-│   └── 架构题草稿.md
-└── RECORDING/                # 录屏产物
+| 指标 | 数值 |
+|------|------|
+| 测试总数 | **92**（100% 通过） |
+| 核心代码行数 | ~2,064 行 |
+| 文件数 | 40 |
+| 工具调用格式支持 | **7 种** |
+| M3 工具调用率 | **100%**（5/5 真实 LLM 测试） |
+| 安全扫描 | ✓ clean（识别 11 种密钥格式） |
+
+---
+
+## 🚀 运行方式
+
+```bash
+# 1. 安装依赖
+cd code/
+pip install -r requirements.txt
+
+# 2. 配置 API Key
+export ANTHROPIC_API_KEY="sk-..."
+export ANTHROPIC_BASE_URL="https://api.minimaxi.com/anthropic"
+
+# 3. 跑测试
+python3 -m pytest tests/
+
+# 4. 启动 CLI
+python3 main.py
+
+# 5. 列出所有 session
+python3 main.py --list
+
+# 6. 恢复 session
+python3 main.py --resume <session_id>
 ```
 
----
-
-## 📅 规划时间表（待定 deadline）
-
-| 阶段 | 内容 | 估时 |
-|------|------|------|
-| 1. 课程学习 | docs/ 全部看完 | 2-3 小时 |
-| 2. 架构题 | 5 道主答 + 打磨 | 2-3 小时 |
-| 3. 工具基类 + Schema | `tools/base.py` | 30 min |
-| 4. LLM 客户端 | `llm.py` | 30 min |
-| 5. 三个工具 | calculator/search/todo | 1 hour |
-| 6. ReAct Loop | `runtime.py` | 2 hour |
-| 7. Session 管理 | `session.py` | 1 hour |
-| 8. Context 管理 | `context.py` | 1.5 hour |
-| 9. Trace / 日志 | `trace.py` | 30 min |
-| 10. CLI 入口 | `main.py` | 30 min |
-| 11. 测试用例 | tests/ | 1.5 hour |
-| 12. 录屏 | asciinema | 30 min |
-| 13. README + 提交 | 文档 | 1 hour |
+详细使用见 [`code/README.md`](code/README.md)。
 
 ---
 
-## 💎 主人相关资源
+## 📚 文档索引
 
-主人已有经验可借鉴：
-- **Project 3**（外化工具）→ 模块三 Task 设计
-- **FCP**（Future Child Posting）→ Session、Memory、Pipeline
-- **HKUST education_report** → 写作风格、报告结构
-- **OpenClaw / Claude Code 体感** → 模块五架构对比
-
----
-
-## 📝 提交清单
-
-- [ ] 代码链接（GitHub 仓库）
-- [ ] 终端录屏（asciinema）
-- [ ] README（运行方式 + 系统设计 + memory 召回）
-- [ ] AI Prompt 记录
-- [ ] 问题解决记录
+| 文档 | 内容 |
+|------|------|
+| [`code/README.md`](code/README.md) | 代码详细说明、系统设计、Memory 召回时机 |
+| [`code/PROMPTS_AND_NOTES.md`](code/PROMPTS_AND_NOTES.md) | AI Prompt 与问题解决记录 |
+| [`docs/architecture/ARCHITECTURE_ANSWERS.md`](docs/architecture/ARCHITECTURE_ANSWERS.md) | 架构设计题答案（5 选 5）|
+| [`docs/00-课程总览.md ~ 06-架构对比.md`](docs/) | 学习笔记（6 课）|
 
 ---
 
-_更新于 2026-07-10 19:47_
+## 🔐 安全说明
+
+- 仓库已用 `scripts/check_secrets.py` 扫描，**0 密钥泄漏**
+- API key 仅在本地环境变量中设置，**未硬编码、未提交**
+- `.env` 文件已在 `.gitignore` 中排除
+- `.env.example` 只包含占位符
+
+---
+
+## 📦 提交清单
+
+- [x] 代码链接（GitHub 仓库，待 push）
+- [x] 终端录屏（`RECORDING/vibecoding_demo.mov`）
+- [x] README（运行方式 + 系统设计 + memory 召回）
+- [x] AI Prompt 与问题解决记录（`code/PROMPTS_AND_NOTES.md`）
+- [x] 架构设计题答案（5 道全答）
+
+---
+
+_应聘人：**庄英琪** · 完成时间：2026-07-14_
