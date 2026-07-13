@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -67,10 +68,23 @@ def _handle_command(line: str, sm: SessionManager, current: Session) -> tuple[st
     """Handle a slash command. Returns (action, new_session_or_current).
 
     action in {"continue", "quit", "switched"}
+
+    Accepts both "/switch ID" and "/switch<ID>" forms (with or without space,
+    with or without <>/() separators).
     """
-    parts = line.strip().split(maxsplit=1)
-    cmd = parts[0].lower()
-    arg = parts[1] if len(parts) > 1 else ""
+    line = line.strip()
+    # Split the command name from any attached arg.
+    # "/switch<id>" → cmd="/switch", arg="<id>"
+    # "/switch ID" → cmd="/switch", arg="ID"
+    m = re.match(r"^/([a-zA-Z]+)(.*)$", line)
+    if not m:
+        return ("continue", current)
+    cmd = "/" + m.group(1).lower()
+    rest = m.group(2).strip()
+    # Strip common arg delimiters like <>, (), []
+    arg = re.sub(r"^[<(\[]+|[>)\]]+$", "", rest).strip()
+    if not arg and " " in rest:
+        arg = rest.split(maxsplit=1)[-1]
 
     if cmd == "/quit":
         sm.save(current)
