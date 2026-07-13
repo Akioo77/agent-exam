@@ -41,6 +41,13 @@ SCAN_EXTS = {".py", ".md", ".txt", ".json", ".yaml", ".yml", ".sh", ".toml", ".c
 # Files/dirs to skip
 SKIP_PATHS = {".git", ".pytest_cache", "__pycache__", "node_modules", ".venv", "venv"}
 
+# Files that legitimately contain fake/example secrets (test fixtures for
+# the scanner itself). Keep this list short — every entry is a place a
+# real secret could sneak in unnoticed.
+SKIP_FILES = {
+    "tests/test_check_secrets.py",  # this file contains fake secrets as fixtures
+}
+
 # Files where secrets are EXPECTED (we list them as known-safe)
 KNOWN_SAFE_PATTERNS = [
     re.compile(r"sk-\.\.\."),         # placeholder
@@ -56,6 +63,14 @@ def is_placeholder(text: str) -> bool:
 def should_scan(path: Path) -> bool:
     if any(part in SKIP_PATHS for part in path.parts):
         return False
+    # Compare against bare filename OR relative path
+    try:
+        rel = path.relative_to(Path.cwd())
+        if str(rel) in SKIP_FILES or path.name in SKIP_FILES:
+            return False
+    except ValueError:
+        if path.name in SKIP_FILES:
+            return False
     if path.suffix.lower() in SCAN_EXTS:
         return True
     if path.name in (".env", ".env.example", "Dockerfile", "Makefile"):
