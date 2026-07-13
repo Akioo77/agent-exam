@@ -60,17 +60,17 @@ def is_placeholder(text: str) -> bool:
     return any(p.search(text) for p in KNOWN_SAFE_PATTERNS)
 
 
-def should_scan(path: Path) -> bool:
+def should_scan(path: Path, root: Path) -> bool:
     if any(part in SKIP_PATHS for part in path.parts):
         return False
-    # Compare against bare filename OR relative path
+    # Compare against bare filename OR relative-to-root path
     try:
-        rel = path.relative_to(Path.cwd())
-        if str(rel) in SKIP_FILES or path.name in SKIP_FILES:
-            return False
+        rel = path.relative_to(root)
+        rel_str = str(rel)
     except ValueError:
-        if path.name in SKIP_FILES:
-            return False
+        rel_str = path.name
+    if rel_str in SKIP_FILES or path.name in SKIP_FILES:
+        return False
     if path.suffix.lower() in SCAN_EXTS:
         return True
     if path.name in (".env", ".env.example", "Dockerfile", "Makefile"):
@@ -106,7 +106,7 @@ def main() -> int:
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
-        if not should_scan(path):
+        if not should_scan(path, root):
             continue
         for lineno, snippet, name in scan_file(path):
             all_findings.append((path, lineno, snippet, name))
