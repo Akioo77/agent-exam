@@ -4,7 +4,7 @@
 > 状态：**✅ 已完成**（2026-07-14）
 > 题目：从零实现最小可用 Agent（Vibe Coding）+ 5 道架构设计题
 >
-> 📺 **录屏**：[`RECORDING/vibecoding_demo.mov`](RECORDING/vibecoding_demo.mov)（103 MB）
+> 📺 **录屏**：[`vibecoding_demo.mov`](vibecoding_demo.mov)（99 MB，⚠️ 超 GitHub 50MB 上限）
 > 📝 **面试题答案**：[`面试题答案.md`](面试题答案.md)
 > 💻 **代码主目录**：[`code/`](code/)
 > 🧪 **测试结果**：92 个测试全部通过
@@ -45,45 +45,42 @@
 agent-exam/
 ├── README.md                            # 本文档
 ├── 面试题答案.md                        # 面试题答案
-├── RECORDING/
-│   └── vibecoding_demo.mov              # 录屏文件（⚠️ 99 MB，超 GitHub 上限）
-├── docs/
-│   ├── 00-课程总览.md ~ 06-架构对比.md  # 学习笔记
-└── code/                                # Vibe coding 产物
-    ├── main.py                          # CLI 入口
-    ├── config.py                        # 配置
-    ├── requirements.txt
-    ├── README.md                        # 代码详细说明
-    ├── PROMPTS_AND_NOTES.md             # AI Prompt 与问题解决记录
-    ├── record_demo.sh                   # 录屏演示脚本
-    ├── run.sh
-    ├── .env.example
-    ├── .gitignore
-    ├── scripts/check_secrets.py         # 密钥扫描器
-    ├── agent/
-    │   ├── runtime.py                   # ReAct Loop 状态机 ⭐
-    │   ├── llm.py                       # LLM 客户端
-    │   ├── parser.py                    # 输出解析（含 7 种 fallback）
-    │   ├── tools.py                     # 工具基类 + Registry
-    │   ├── session.py                   # Session 管理
-    │   ├── context.py                   # Context 压缩
-    │   └── trace.py                     # Trace 日志
-    ├── tools/
-    │   ├── calculator.py                # 安全数学计算
-    │   ├── search.py                    # Mock 搜索
-    │   └── todo.py                      # 待办列表
-    └── tests/
-        ├── test_calculator.py           # 5
-        ├── test_search.py               # 3
-        ├── test_todo.py                 # 6
-        ├── test_registry.py             # 5
-        ├── test_session_context.py      # 6
-        ├── test_parser.py               # 13
-        ├── test_runtime.py              # 6
-        ├── test_robustness.py           # 19
-        ├── test_cli_commands.py         # 12
-        ├── test_check_secrets.py        # 8
-        └── __init__.py
+├── vibecoding_demo.mov                  # 录屏演示（99 MB）
+├── code/                                # Vibe coding 产物
+│   ├── main.py                          # CLI 入口
+│   ├── config.py                        # 配置
+│   ├── requirements.txt
+│   ├── README.md                        # 代码详细说明
+│   ├── PROMPTS_AND_NOTES.md             # AI Prompt 与问题解决记录
+│   ├── record_demo.sh                   # 录屏演示脚本
+│   ├── run.sh
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── scripts/check_secrets.py         # 密钥扫描器
+│   ├── agent/
+│   │   ├── runtime.py                   # ReAct Loop 状态机 ⭐
+│   │   ├── llm.py                       # LLM 客户端
+│   │   ├── parser.py                    # 输出解析（含 7 种 fallback）
+│   │   ├── tools.py                     # 工具基类 + Registry
+│   │   ├── session.py                   # Session 管理
+│   │   ├── context.py                   # Context 压缩
+│   │   └── trace.py                     # Trace 日志
+│   ├── tools/
+│   │   ├── calculator.py                # 安全数学计算
+│   │   ├── search.py                    # Mock 搜索
+│   │   └── todo.py                      # 待办列表
+│   └── tests/
+│       ├── test_calculator.py           # 5
+│       ├── test_search.py               # 3
+│       ├── test_todo.py                 # 6
+│       ├── test_registry.py             # 5
+│       ├── test_session_context.py      # 6
+│       ├── test_parser.py               # 13
+│       ├── test_runtime.py              # 6
+│       ├── test_robustness.py           # 19
+│       ├── test_cli_commands.py         # 12
+│       ├── test_check_secrets.py        # 8
+│       └── __init__.py
 ```
 
 ---
@@ -150,7 +147,6 @@ python3 main.py --resume <session_id>
 | [`code/README.md`](code/README.md) | 代码详细说明、系统设计、Memory 召回时机 |
 | [`code/PROMPTS_AND_NOTES.md`](code/PROMPTS_AND_NOTES.md) | AI Prompt 与问题解决记录 |
 | [`面试题答案.md`](面试题答案.md) | 架构设计题答案（5 道全答）|
-| [`docs/00-课程总览.md ~ 06-架构对比.md`](docs/) | 学习笔记（6 课）|
 
 ---
 
@@ -166,7 +162,7 @@ python3 main.py --resume <session_id>
 ## 📦 提交清单
 
 - [x] 代码链接（GitHub 仓库，待 push）
-- [x] 终端录屏（`RECORDING/vibecoding_demo.mov`）
+- [x] 终端录屏（`vibecoding_demo.mov`）
 - [x] README（运行方式 + 系统设计 + memory 召回）
 - [x] AI Prompt 与问题解决记录（`code/PROMPTS_AND_NOTES.md`）
 - [x] 架构设计题答案（5 道全答）
