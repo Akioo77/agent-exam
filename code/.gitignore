@@ -1,3 +1,8 @@
+# Environment
+.env
+.env.*
+!.env.example
+
 # Session files (created at runtime by the CLI)
 .agent_sessions/
 
@@ -14,7 +19,19 @@ __pycache__/
 
 # OS
 .DS_Store
+Thumbs.db
 
-# Environment
-.env
-.env.local
+# Logs
+*.log
+logs/
+
+# Test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Build / dist
+build/
+dist/
+*.egg-info/

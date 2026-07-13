@@ -37,6 +37,16 @@ pip install -r requirements.txt
 
 ### 2. 配置 API Key
 
+**推荐：用 `.env` 文件**
+
+```bash
+cp .env.example .env
+# 编辑 .env，填入你的真实 API key
+python3 main.py
+```
+
+**或者用环境变量**
+
 ```bash
 export ANTHROPIC_API_KEY="sk-..."
 # 可选：自定义 base URL（默认已设为 MiniMax 端点）
@@ -50,6 +60,17 @@ export AGENT_MODEL="MiniMax-M3"
 chmod +x run.sh
 ./run.sh
 ```
+
+### 🔒 安全检查
+
+提交前跑一下密钥扫描：
+
+```bash
+python3 scripts/check_secrets.py
+```
+
+如果扫到真实 key，脚本会报错并指出文件 + 行号。
+支持的检测模式：OpenAI/MiniMax/Anthropic/OpenRouter/GitHub/AWS/Google/Slack token + 硬编码密码。
 
 ### 3. 启动 CLI
 
