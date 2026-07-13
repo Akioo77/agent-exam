@@ -46,6 +46,12 @@ _XML_PARAM_TAG_RE = re.compile(
     r"<([A-Za-z_][\w]*)>\s*(.*?)\s*</\1>", re.DOTALL
 )
 
+# Variant 3: {"tool": "NAME", "action": "...", ...} — bare JSON object in
+# text mentioning a tool name. We scan every JSON-looking object in the text
+# and pick ones whose "tool" / "name" / "function" field matches a known tool.
+_KNOWN_TOOL_NAMES_HINT = r"(?:calculator|search|todo|read_docs|weather)"
+_JSON_BLOB_RE = re.compile(r"\{[^{}]*\"(?:tool|name|function)\"[^{}]*\}")
+
 
 @dataclass
 class ParsedResponse:
@@ -153,33 +159,149 @@ def _scrape_xml_tool_use(text: str) -> Tuple[str, List[Dict[str, Any]]]:
 
     # Variant 2: <tool_name>NAME</tool_name><parameters>...</parameters>
     name_match = _XML_TOOL_NAME_RE.search(clean)
-    if not name_match:
-        return clean, tool_calls
+    if name_match:
+        name = name_match.group(1).strip()
+        inp: Dict[str, Any] = {}
+        block_start = name_match.start()
+        block_end = name_match.end()
 
-    name = name_match.group(1).strip()
-    inp: Dict[str, Any] = {}
-    block_start = name_match.start()
-    block_end = name_match.end()
+        params_json = _XML_PARAMETERS_JSON_RE.search(clean, pos=block_end)
+        params_kv = _XML_PARAMETERS_KV_RE.search(clean, pos=block_end)
 
-    params_json = _XML_PARAMETERS_JSON_RE.search(clean, pos=block_end)
-    params_kv = _XML_PARAMETERS_KV_RE.search(clean, pos=block_end)
+        if params_json:
+            parsed = _safe_json_loads(params_json.group(1))
+            if isinstance(parsed, dict):
+                inp = parsed
+            block_end = params_json.end()
+        elif params_kv:
+            for tag_match in _XML_PARAM_TAG_RE.finditer(params_kv.group(1)):
+                key = tag_match.group(1).strip()
+                val = tag_match.group(2).strip()
+                inp[key] = _coerce(val)
+            block_end = params_kv.end()
 
-    if params_json:
-        parsed = _safe_json_loads(params_json.group(1))
-        if isinstance(parsed, dict):
-            inp = parsed
-        block_end = params_json.end()
-    elif params_kv:
-        for tag_match in _XML_PARAM_TAG_RE.finditer(params_kv.group(1)):
-            key = tag_match.group(1).strip()
-            val = tag_match.group(2).strip()
-            inp[key] = _coerce(val)
-        block_end = params_kv.end()
+        if name and inp:
+            tool_calls.append({"name": name, "input": inp})
+            clean = (clean[:block_start] + clean[block_end:]).strip()
+            return clean, tool_calls
+        # If we matched <tool_name> but found no <parameters>, fall through
+        # to Variant 4 which can pick up scattered <action>/<content> tags.
 
-    if name and inp:
-        tool_calls.append({"name": name, "input": inp})
+    # Variant 3: bare JSON in text — {"tool": "NAME", "input": {...}}
+    # or {"tool": "NAME", "action": "...", ...} with action folded into input.
+    # Also handles Anthropic-native JSON in text: {"name": "...", "input": {...}}
+    # which has the same schema as a tool_use content block but arrives as
+    # plain text instead.
+    if not tool_calls:
+        # Scan for any JSON blob containing a "tool", "name", or "function" key
+        # Use a brace-matching scanner so nested objects work.
+        for hint_re in (
+            re.compile(r"\{\s*\"tool\"\s*:"),
+            re.compile(r"\{\s*\"function\"\s*:"),
+            re.compile(r"\{\s*\"name\"\s*:\s*\"(?P<n>[A-Za-z_][\w]*)\"\s*,\s*\"(?:input|arguments)\"\s*:"),
+        ):
+            for m in hint_re.finditer(clean):
+                start = m.start()
+                depth = 0
+                end = start
+                for i, ch in enumerate(clean[start:], start=start):
+                    if ch == "{":
+                        depth += 1
+                    elif ch == "}":
+                        depth -= 1
+                        if depth == 0:
+                            end = i + 1
+                            break
+                if end <= start:
+                    continue
+                blob = clean[start:end]
+                parsed = _safe_json_loads(blob)
+                if not isinstance(parsed, dict):
+                    continue
+                name = parsed.get("tool") or parsed.get("name") or parsed.get("function")
+                if not isinstance(name, str) or not name:
+                    continue
+                inp = parsed.get("input") or parsed.get("arguments")
+                if not isinstance(inp, dict):
+                    inp = {}
+                    # fold remaining fields
+                    for k, v in parsed.items():
+                        if k in ("tool", "name", "function", "type"):
+                            continue
+                        inp[k] = v
+                if inp:
+                    tool_calls.append({"name": name, "input": inp})
+                    clean = (clean[:start] + clean[end:]).strip()
+                    break
+            if tool_calls:
+                break
 
-    clean = (clean[:block_start] + clean[block_end:]).strip()
+        if tool_calls:
+            return clean, tool_calls
+
+    # Variant 4: scattered XML tags like
+    #   <tool_name>todo</tool_name>
+    #   <action>add</action>
+    #   <content>买菜</content>
+    # The <tool_name>X</tool_name> tag is the tool name; the rest are input
+    # fields. <parameters> is excluded because it's Variant 2 territory.
+    tag_matches = list(_XML_PARAM_TAG_RE.finditer(clean))
+    if tag_matches:
+        name = ""
+        inp: Dict[str, Any] = {}
+        span_start = len(clean)
+        span_end = 0
+        for m in tag_matches:
+            key = m.group(1).strip().lower()
+            val = m.group(2).strip()
+            if key == "tool_name":
+                name = val
+                span_start = min(span_start, m.start())
+                span_end = max(span_end, m.end())
+            elif key == "parameters":
+                continue  # Variant 2; don't double-count
+            else:
+                inp[key] = _coerce(val)
+                span_start = min(span_start, m.start())
+                span_end = max(span_end, m.end())
+        if name and inp:
+            tool_calls.append({"name": name, "input": inp})
+            clean = (clean[:span_start] + clean[span_end:]).strip()
+            return clean, tool_calls
+
+    # Variant 5: OpenAI-style function-call JSON in text
+    #   {"type":"function","name":"calculator","arguments":{"expression":"25*4+10"}}
+    # or with "input" instead of "arguments"
+    #   {"type":"function","name":"calculator","input":{"expression":"25*4+10"}}
+    # Use a brace-matching scanner since the JSON may contain nested objects.
+    if not tool_calls:
+        for m in re.finditer(r"\{\s*\"type\"\s*:\s*\"function\"", clean):
+            start = m.start()
+            depth = 0
+            end = start
+            for i, ch in enumerate(clean[start:], start=start):
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            if end <= start:
+                continue
+            blob = clean[start:end]
+            parsed = _safe_json_loads(blob)
+            if not isinstance(parsed, dict):
+                continue
+            name = parsed.get("name", "")
+            inp = parsed.get("arguments", parsed.get("input", {}))
+            if isinstance(inp, str):
+                inp = _safe_json_loads(inp) or {}
+            if name and isinstance(inp, dict) and inp:
+                tool_calls.append({"name": name, "input": inp})
+                clean = (clean[:start] + clean[end:]).strip()
+                break
+
     return clean, tool_calls
 
 

@@ -16,6 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import config
+# Importing the tool modules registers them with the global registry
+# via their @register_tool decorator. The order matters.
+import tools.calculator  # noqa: F401
+import tools.search  # noqa: F401
+import tools.todo  # noqa: F401
 from agent.runtime import AgentRuntime
 from agent.session import Session, SessionManager
 

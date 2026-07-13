@@ -142,3 +142,127 @@ def test_parse_xml_tool_name_variant_kv_params():
     assert p.has_tool_calls
     assert p.tool_calls[0]["name"] == "calculator"
     assert p.tool_calls[0]["input"]["expression"] == "2+3"
+
+
+def test_parse_bare_json_with_tool_key():
+    """Variant 3: bare JSON in text with 'tool' field."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '{"tool": "calculator", "action": "compute", "expression": "25*4+10"}'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "calculator"
+    # Both "action" and "expression" should be folded into input
+    inp = p.tool_calls[0]["input"]
+    assert inp.get("expression") == "25*4+10"
+    assert "tool" not in inp
+    assert p.stop_reason == "tool_use"
+
+
+def test_parse_bare_json_todo_format():
+    """Variant 3 with todo tool."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '{"tool": "todo", "action": "add", "content": "买菜"}'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "todo"
+    inp = p.tool_calls[0]["input"]
+    assert inp.get("action") == "add"
+    assert inp.get("content") == "买菜"
+
+
+def test_parse_bare_json_strips_from_text():
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": 'I will help. {"tool": "search", "query": "weather"} Thanks.'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "search"
+    assert p.tool_calls[0]["input"]["query"] == "weather"
+    # JSON blob stripped from user-visible text
+    assert "{" not in p.text
+    assert "I will help" in p.text
+    assert "Thanks" in p.text
+
+
+def test_parse_scattered_xml_tags():
+    """Variant 4: scattered XML tags without a <parameters> wrapper."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '<tool_name>todo</tool_name>\n<action>add</action>\n<content>买菜</content>'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "todo"
+    inp = p.tool_calls[0]["input"]
+    assert inp["action"] == "add"
+    assert inp["content"] == "买菜"
+    # All tags stripped from visible text
+    assert "<tool_name>" not in p.text
+    assert "<action>" not in p.text
+    assert "<content>" not in p.text
+
+
+def test_parse_openai_style_function_call():
+    """Variant 5: OpenAI-style function call JSON in text."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '{"type":"function","name":"calculator","arguments":{"expression": "25*4+10"}}'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "calculator"
+    assert p.tool_calls[0]["input"]["expression"] == "25*4+10"
+    # JSON stripped from visible text
+    assert "{" not in p.text
+
+
+def test_parse_openai_style_with_input_key():
+    """Variant 5b: same format but with 'input' instead of 'arguments'."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '{"type":"function","name":"search","input":{"query":"weather"}}'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "search"
+    assert p.tool_calls[0]["input"]["query"] == "weather"
+
+
+def test_parse_anthropic_native_json_in_text():
+    """Variant 3b: Anthropic-native JSON shape in text (not tool_use block)."""
+    resp = {
+        "stop_reason": "end_turn",
+        "content": [{
+            "type": "text",
+            "text": '{"name": "calculator", "input": {"expression": "25*4+10"}}'
+        }],
+    }
+    p = parse_response(resp)
+    assert p.has_tool_calls
+    assert p.tool_calls[0]["name"] == "calculator"
+    assert p.tool_calls[0]["input"]["expression"] == "25*4+10"
+    # stop_reason corrected
+    assert p.stop_reason == "tool_use"
