@@ -134,9 +134,9 @@ pause
 # ============================================================
 section "6/6 启动 Agent CLI 主界面"
 echo -e "${BLUE}现在启动 main.py，进入交互模式${NC}"
-echo -e "${YELLOW}（录屏会在此处停留，让面试官看到主程序界面）${NC}"
+echo -e "${YELLOW}（录屏会在此处停留）${NC}"
 echo ""
-echo -e "${GREEN}提示：面试官可以在这里看到:${NC}"
+echo -e "${GREEN}可以看到:${NC}"
 echo "  • Banner（项目标题 + Model + Session ID）"
 echo "  • 内置命令列表（/new, /list, /switch 等）"
 echo "  • 提示符等待用户输入"
