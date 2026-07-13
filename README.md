@@ -5,7 +5,7 @@
 > 题目：从零实现最小可用 Agent（Vibe Coding）+ 5 道架构设计题
 >
 > 📺 **录屏**：[`RECORDING/vibecoding_demo.mov`](RECORDING/vibecoding_demo.mov)（103 MB）
-> 📝 **架构题答案**：[`docs/architecture/ARCHITECTURE_ANSWERS.md`](docs/architecture/ARCHITECTURE_ANSWERS.md)
+> 📝 **面试题答案**：[`面试题答案.md`](面试题答案.md)
 > 💻 **代码主目录**：[`code/`](code/)
 > 🧪 **测试结果**：92 个测试全部通过
 
@@ -31,11 +31,11 @@
 
 | 模块 | 题目 | 答案 |
 |------|------|------|
-| 一 | Context 压缩 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块一` |
-| 二 | Memory 经典框架 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块二` |
-| 三 | 长程任务目标保持 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块三` |
-| 四 | 异步工具与通知 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块四` |
-| 五 | Claude Code vs GLM 工具输出 | `docs/architecture/ARCHITECTURE_ANSWERS.md#模块五` |
+| 一 | Context 压缩 | [`面试题答案.md`](面试题答案.md#模块一) |
+| 二 | Memory 经典框架 | [`面试题答案.md`](面试题答案.md#模块二) |
+| 三 | 长程任务目标保持 | [`面试题答案.md`](面试题答案.md#模块三) |
+| 四 | 异步工具与通知 | [`面试题答案.md`](面试题答案.md#模块四) |
+| 五 | Claude Code vs GLM 工具输出 | [`面试题答案.md`](面试题答案.md#模块五) |
 
 ---
 
@@ -44,13 +44,11 @@
 ```
 agent-exam/
 ├── README.md                            # 本文档
+├── 面试题答案.md                        # 面试题答案
 ├── RECORDING/
-│   └── vibecoding_demo.mov              # 录屏文件（103 MB）
+│   └── vibecoding_demo.mov              # 录屏文件（⚠️ 99 MB，超 GitHub 上限）
 ├── docs/
 │   ├── 00-课程总览.md ~ 06-架构对比.md  # 学习笔记
-│   └── architecture/
-│       ├── ARCHITECTURE_ANSWERS.md      # 架构题答案（md）
-│       └── 面试题答案.docx              # 架构题答案（原 docx）
 └── code/                                # Vibe coding 产物
     ├── main.py                          # CLI 入口
     ├── config.py                        # 配置
@@ -151,7 +149,7 @@ python3 main.py --resume <session_id>
 |------|------|
 | [`code/README.md`](code/README.md) | 代码详细说明、系统设计、Memory 召回时机 |
 | [`code/PROMPTS_AND_NOTES.md`](code/PROMPTS_AND_NOTES.md) | AI Prompt 与问题解决记录 |
-| [`docs/architecture/ARCHITECTURE_ANSWERS.md`](docs/architecture/ARCHITECTURE_ANSWERS.md) | 架构设计题答案（5 选 5）|
+| [`面试题答案.md`](面试题答案.md) | 架构设计题答案（5 道全答）|
 | [`docs/00-课程总览.md ~ 06-架构对比.md`](docs/) | 学习笔记（6 课）|
 
 ---
